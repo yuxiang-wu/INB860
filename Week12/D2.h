@@ -77,6 +77,14 @@ void init(){
   }
 }
 
+cell makeCell(int row, int col, float weight){
+	cell tmp;
+	tmp.row = row;
+	tmp.col = col;
+	tmp.weight = weight;
+	return tmp;
+}
+
 void initAStar(){
   for(int i = 0; i < numOfRows; i++){
     for(int j = 0; j < numOfColumns; j++){
@@ -98,5 +106,6 @@ void initAStar(){
   curRow = 0;
   curCol = 0;
   frontierCount = 0;
-
+  
+  updateFrontier(makeCell(0, 0, heuristic[0][0]));
 }
