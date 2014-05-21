@@ -4,9 +4,6 @@ typedef struct{
     float weight;
 } cell;
 
-cell frontier[MAX_CELL];
-int frontierCount;
-
 cell popLeastWeight(){
     cell tmp;
 
@@ -25,10 +22,14 @@ cell popLeastWeight(){
     tmp.col = frontier[index].col;
     tmp.weight = frontier[index].weight;
 	
+	// delete the cell from frontier array
     for(int i = index + 1; i < frontierCount; i++){
         frontier[i - 1] = frontier[i];
     }
+	frontierCount--;
 	
+	// move label of the cell from frontier to explored
+	front[tmp.row][tmp.col] = 0;
 	explored[tmp.row][tmp.col] = 1;
     return tmp;
 }
@@ -42,8 +43,11 @@ cell updateFrontier(cell c){
 			break;
 		}
 	}
+	
+	// add to the frontier
 	if(!inFrontier){
 		frontier[frontierCount] = c;
+		front[c.row][c.col] = 1;
 		frontierCount++;
 	}
 }
