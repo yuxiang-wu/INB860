@@ -1,0 +1,91 @@
+function M = simGraphNavigation(G, driver, node0, node1, steps)
+%  Simulate the navigation in the graph G with the robot controlled by the
+%  function 'driver'
+%
+%  The driver function should implement the following interface
+%        [c , M1] = driver(La, M0, isBacktrack)
+%        where
+%           inputs:
+%              Li :  list of the neighbors in degrees anticlockwise of 
+%                    the incident branches with respect to the branch the robot is on
+%              M0 :  the current map of the robot
+%              isBacktrack : true if the driver is now backtracking
+% 
+%           outputs:
+%               c :  branch choice or negative value to stop
+%                    1 corresponds to the rightmost branch
+%                    2 corresponds to the 2nd rightmost branch
+%                    0 corresponds to a U turn
+%              M1 : updated map
+%      
+%
+%  The simulation starts with the robot on the edge node0->node1 with the robot's
+%  arriving at node1.  The simulation is run for 'steps' iterations.
+%  The simulation displays 'Li'  the list of the corresponding neighbours labels 
+%  created by f.maire@qut.edu.au  on the 26th April 2012
+%  Revised on 8 March 2014
+%  modified by jimmywu2011@126.com on 25 March 2014
+
+% n0: previous node
+% n1: current node
+n0 = node0; n1 = node1;
+
+M = []; % initial empty map
+
+fprintf('\n\n    *** Starting the simulator ***\n\n')
+
+figG = plot_graph(G);
+
+for step = 1:2*steps+1
+
+   if(step == steps + 1)
+       fprintf('\n\n    *** Starting backtrack ***\n\n')
+   end
+
+   fprintf('SimGraphNavigation:: Coming from node %d arriving at node  %d \n', n0, n1)
+   
+   Xrobot = 0.8*G.xy(n1,:)+0.2*G.xy(n0,:);   
+   figG = plot_graph(G,figG, ['from ' num2str(n0) ' to ' num2str(n1)]);   
+   hold on
+   plot(Xrobot(1),Xrobot(2),'*r')
+   hold off
+   
+   [La , Li] = localBearings(G, n0, n1);
+   
+   % fprintf('SimGraphNavigation:: Angles  [ ')
+   % fprintf('%2.2f ',La)
+   % fprintf(']\n')
+   
+   fprintf('SimGraphNavigation:: Neighbours  [ ')
+   fprintf('%2d ',Li)
+   fprintf(']\n')
+   
+   if(step <= steps)
+       [c, M] = driver(Li, M, false);
+   else
+       [c, M] = driver(Li, M, true);
+   end
+
+   fprintf('SimGraphNavigation:: Driver chooses the %d th branch\n\n', c);
+   
+   if 0<c
+       n0 = n1;
+       n1 = Li(c);
+   elseif c==0
+       % U turn
+       old_n0 = n0;
+       n0 = n1;
+       n1 = old_n0;
+   else
+      % c < 0
+	  break
+   end
+
+   pause;
+end
+
+Xrobot = 0.8*G.xy(n1,:)+0.2*G.xy(n0,:);   
+figG = plot_graph(G,figG, ['from ' num2str(n0) ' to ' num2str(n1)]);
+hold on
+plot(Xrobot(1),Xrobot(2),'*r')
+hold off

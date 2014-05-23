@@ -4,17 +4,21 @@
 
 float k; //expressed by r/d
 short threshold;
-#define timeout 550
+int adjustCount = 0;
+
+#define timeout 500
 #define swipeAngle 350
 #define beepThreshold 10
-#define sampleFreq 600
-#define cspeed 20
-#define rotateSpeed 25
+#define sampleFreq 660
+#define cspeed 15
+//#define cspeed 10
+#define rotateSpeed 15
 #define targetCalib 4
-#define beepInterval 1200
-#define Kp 1.2
+#define beepInterval 1400
+#define Kp 1.0
 #define Kd 0.3
 #define Ki 0
+#define adjustAmount 2
 
 /* This function reads 'threshold' and 'k' from background calibration
  * file "libCalib.dat" and wheel calibration file "compassCalib.dat" */
@@ -31,7 +35,7 @@ bool readCalib(){
 
   //if file not existed, beep!
   if(nIoResult){
-    nxtDisplayStringAt(0,31,"Please run background calibration program.");
+    nxtDisplayStringAt(0,31,"Please run background.");
     PlayTone(1175,15);
     wait1Msec(2000);
     return false;
@@ -46,7 +50,7 @@ bool readCalib(){
 
   //if file not existed, beep!
   if(nIoResult){
-    nxtDisplayStringAt(0,31,"Please run compass calibration program.");
+    nxtDisplayStringAt(0,31,"Please run compass.");
     PlayTone(1175,15);
     wait1Msec(2000);
     return false;
@@ -60,31 +64,42 @@ float compass(){
   return (nMotorEncoder[Right] - nMotorEncoder[Left])*k;
 }
 
+float signedCompass(){
+  float comp = compass() + adjustAmount *adjustCount;
+  while(comp > 180.0){
+    comp -= 360.0;
+  }
+  while(comp < -180.0){
+    comp += 360.0;
+  }
+  return comp;
+}
+
 /*turn on the spot if the timer expires, return false if it could not find another branch*/
 bool turnOnSpot(short target){
-  short wheelEncoderTurnDot = (short)(swipeAngle / k)/2;
-  nMotorEncoderTarget[Left] = nMotorEncoder[Left] - wheelEncoderTurnDot;
-  nMotorEncoderTarget[Right] = nMotorEncoder[Right] + wheelEncoderTurnDot;
+
   float cur_compass = compass();
 
   //start rotating
   motor[Left] = 0;
   motor[Right] = 0;
-  wait1Msec(15);
+  wait1Msec(100);
   motor[Left] = -rotateSpeed;
   motor[Right] = rotateSpeed;
 
 //  while(nMotorRunState[Right] != runStateIdle){
-  while(compass() - cur_compass < 360){
+  while(compass() - cur_compass < 390){
     float diff = compass() - cur_compass;
     if(SensorValue[Light] < target && (diff < 180 || diff > 250)){
       time1[T1] = 0;
       PlayTone(1175,20);
       motor[Left]=0;
       motor[Right]=0;
-      wait1Msec(50);
+      wait1Msec(100);
+      adjustCount++;
       return true;
     }
+    nxtDisplayStringAt(0,31,"%f", signedCompass());
   }
   motor[Left]=0;
   motor[Right]=0;
@@ -110,7 +125,7 @@ void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
         if(SensorValue[Light] < target){ //target can be make more conservative than threshold
           time1[T1] = 0;
         }
-        if(time1[T2] > sampleFreq && SensorValue[Light] < target ){ //the light sensor should be on the tape when it beeps
+        if(time1[T2] > sampleFreq && SensorValue[Light] < target){ //the light sensor should be on the tape when it beeps
             float cur_compass = compass();
             if(time1[T3] > beepInterval && ((cur_compass - pre_compass) > beepThreshold || (pre_compass - cur_compass) > beepThreshold)){
                 PlayTone(1175, 20);
@@ -120,11 +135,11 @@ void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
             pre_compass = cur_compass;
             time1[T2] = 0;
         }
+        nxtDisplayStringAt(0,31,"%f", signedCompass());
     }
     else{
       if(!turnOnSpot(target)) return;
     }
-
   }
 }
 
@@ -137,6 +152,6 @@ task main(){
   //use PID controller to follow the line
   PIDDriver(cspeed, threshold + targetCalib, Kp, Kd, Ki);
 
-  //wait1Msec(10000);
+  wait1Msec(10000);
   return;
 }
