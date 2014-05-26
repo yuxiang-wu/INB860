@@ -97,7 +97,7 @@ float signedCompass(){
 }
 
 /*turn on the spot if the timer expires, return false if it could not find another branch*/
-bool turnOnSpot(short target, bool greyPatch){
+bool turnOnSpot(short target){
 
   float cur_compass = compass();
 
@@ -117,11 +117,6 @@ bool turnOnSpot(short target, bool greyPatch){
     //nxtDisplayStringAt(0,31,"%f", signedCompass());
   }
   stop();
-  if(!greyPatch){
-      control(-rotateSpeed, rotateSpeed);
-      while(SensorValue[Light] > target){}
-      stop();
-  }
   return false;
 }
 
@@ -133,7 +128,6 @@ void PIDDriver(short target){
   time1[T2] = 0;
   time1[T4] = 0;
   float pre_compass = compass();
-  bool greyPatch = false;
   while(true){
     if(time1[T1] < timeout){ // T1 for timeout
         e = threshold - SensorValue[Light];
@@ -147,33 +141,6 @@ void PIDDriver(short target){
           time1[T1] = 0;
         }
 
-        // When grey patch detected
-        if(SensorValue[Light] > 38 && SensorValue[Light] < 43){
-            if(time1[T4] > 300){
-                greyPatch = true;
-                stop();
-                PlayTone(1500, 40);
-                wait1Msec(800);
-                PlayTone(1500, 40);
-                wait1Msec(800);
-                PlayTone(1500, 40);
-                wait1Msec(800);
-                control(rotateSpeed, -rotateSpeed, 1000); // 800 is for getting rid of the grey patch
-                while(SensorValue[Light] > threshold){}
-                stop();
-                time1[T1] = 0;
-                time1[T2] = 0;
-                time1[T3] = 0;
-                nMotorEncoder[Left]=0;
-                nMotorEncoder[Right]=0;
-                pre_compass = compass();
-                continue;
-            }
-        }
-        else{
-            time1[T4] = 0;
-        }
-
         if(time1[T2] > sampleFreq && SensorValue[Light] < target){ //the light sensor should be on the tape when it beeps
             float cur_compass = compass();
             if(time1[T3] > beepInterval && ((cur_compass - pre_compass) > beepThreshold || (pre_compass - cur_compass) > beepThreshold)){
@@ -183,45 +150,26 @@ void PIDDriver(short target){
 
             pre_compass = cur_compass;
             time1[T2] = 0; // T2 for sampling frequency
-            if(greyPatch){
-              float tmp = signedCompass();
-              nxtDisplayStringAt(0,31,"%f", tmp);
-              logCompass(tmp);
-            }
+            float tmp = signedCompass();
+            nxtDisplayStringAt(0,31,"%f", tmp);
+            logCompass(tmp);
+
         }
     }
     else{
-        if(greyPatch){
-          if(!turnOnSpot(target, greyPatch)) return;
-        }
-        else{
-          turnOnSpot(target, greyPatch);
-        }
+          if(!turnOnSpot(target)) return;
     }
   }
-}
-
-// Move forward until get to the pattern and put light sensor onto it
-void moveToPattern(){
-  control(cruise_speed, cruise_speed);
-  while(SensorValue[Light] > threshold){ }
-  wait1Msec(CALIB_CENTER);
-  stop();
-  control(rotateSpeed, -rotateSpeed);
-  while(SensorValue[Light] > threshold){ }
-  stop();
 }
 
 task main(){
   if(!readCalib()) return; //reads calibration informations, return if it fails.
 
   // initialize the log file
-  const string logName = "E1Log.txt";
+  const string logName = "E2Log.txt";
   short logSize = 2000;
   Delete(logName, logResultIO);
   OpenWrite(logHandle, logResultIO,logName, logSize);
-
-  moveToPattern();
 
   //use PID controller to follow the line
   PIDDriver(threshold + targetCalib);
