@@ -1,7 +1,7 @@
 function [ result, h_mat ] = heuristic( r, c, cost_mat, h_mat )
 
     if r < 1 || c < 1
-        result = 200000; % INFINITY
+        result = Inf; % INFINITY
         return;
     elseif r == 1 && c == 1
         result = 0;
