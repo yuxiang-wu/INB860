@@ -1,13 +1,12 @@
-function cheapest_path = A_star(rows_in, cols_in, grey)
-    global rows;
+function [cost_mat, cheapest_path] = A_star(rows_in, cols_in, grey)
     rows = rows_in;
-    global cols;
     cols = cols_in;
     
-    global numOfRow;
     numOfRow = length(rows);
-    global numOfCol;
     numOfCol = length(cols);
+    
+    % initialize the cheapest_path
+    cheapest_path = zeros(numOfRow, numOfCol);
 
     % initialize the cost_mat matrix
     cost_mat = zeros(numOfRow, numOfCol);
@@ -43,11 +42,13 @@ function cheapest_path = A_star(rows_in, cols_in, grey)
         
         % if it is goal then break
         if(s(1) == 1 && s(2) == 1)
+            plotAtCenter(rows, cols, 1, 1);
             break;
         end
         
         % add s to explored
         explored(s(1), s(2)) = 1;
+        plotAtCenter(rows, cols, s(1), s(2));
         frontier_handle(s(1), s(2)) = 0;
         
         % actions
@@ -63,24 +64,33 @@ function cheapest_path = A_star(rows_in, cols_in, grey)
                 continue;
             end
             
-            %succ_handle = frontier_handle(successor(1), successor(2));
-            [~,succ_handle]=ismember(successor(1:2),frontier(:,1:2),'rows');
+            % update the frontier with successor and priority
+            [~,succ_handle] = ismember(successor(1:2),frontier(:,1:2),'rows');
             if( succ_handle )
                 succ_priority = frontier(succ_handle, 3);
                 cur_priority = p + cost_mat(successor(1), successor(2)) + h_mat(successor(1), successor(2)) - h_mat(s(1), s(2));
                 if(cur_priority < succ_priority)
                     frontier(succ_handle, 3) = cur_priority;
+                    cheapest_path(successor(1), successor(2)) = i;
                 end
             else
                 cur_priority = p + cost_mat(successor(1), successor(2)) + h_mat(successor(1), successor(2)) - h_mat(s(1), s(2));
                 frontier = [frontier; successor cur_priority];
                 frontier_handle(successor(1), successor(2)) = 1;
+                cheapest_path(successor(1), successor(2)) = i;
             end
         end
+        
+        fprintf(['Frontier includes '  mat2str(frontier(:,1:2))  '\n']);
+        fprintf('Current position is row %d, column %d.\n', s(1), s(2));
+        fprintf('Press enter to continue...\n\n');
+        
+        pause;
     end
 end
 
-function [x, y] = plotAtCenter(r, c)
+function [x, y] = plotAtCenter(rows, cols, r, c)
     x = sum(cols(1:c)) - cols(c) / 2;
-    y = sum(rows(1:r)) - rows(r) / 2;
+    y = sum(rows(end:-1:r)) - rows(r) / 2;
+    plot(x, y, '*', 'MarkerSize', 20, 'MarkerEdgeColor','k');
 end
