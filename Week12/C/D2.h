@@ -57,13 +57,14 @@ void stop(){
 void turn(int angle){
   int startCompass = compass();
   if(angle > 0){
-    control(-rotateSpeed, rotateSpeed, 100);
+    control(-rotateSpeed, rotateSpeed);
     while(compass() - startCompass < angle && SensorValue[Light] > threshold){}
   }
   else{
     control(rotateSpeed, -rotateSpeed, 100);
     while(compass() - startCompass > angle && SensorValue[Light] > threshold){}
   }
+  //wait1Msec(100);
   stop();
 }
 
@@ -73,17 +74,15 @@ void PID(short target, bool isLeftEdgeFollower, int mode){
 
   time1[T1] = 0; // T1 is to determine whether the robot has go off the line
   time1[T2] = 0; // T2 is for compass sampling
+  time1[T3] = 0;
   float pre_compass = compass();
 
+  float pre_encoder;
   if(mode == DETECT_ROWS || mode == DETECT_COLUMNS){
       nMotorEncoder[Left] = 0;
       nMotorEncoder[Right] = 0;
+      pre_encoder = 0
   }
-  float pre_encoder;
-  if(mode == DETECT_ROWS)
-      pre_encoder = nMotorEncoder[Left];
-  else if(mode == DETECT_COLUMNS)
-      pre_encoder = nMotorEncoder[Right];
 
   while(true){
     if(time1[T1] < timeout){
@@ -125,8 +124,7 @@ void PID(short target, bool isLeftEdgeFollower, int mode){
                     numOfColumns++;
                     pre_encoder = nMotorEncoder[Right];
                 }
-                else if(mode == STRAIGHT_FORWARD){
-                }
+
                 time1[T1] = 0;
                 time1[T3] = 0;
                 cur_compass = compass();
@@ -152,42 +150,4 @@ void PID(short target, bool isLeftEdgeFollower, int mode){
 void init(){
   numOfColumns = 0;
   numOfRows = 0;
-  for(int i = 0; i < numOfRows; i++){
-    for(int j = 0; j < numOfColumns; j++){
-      greyPatch[i][j] = false;
-    }
-  }
-}
-
-cell makeCell(int row, int col, float weight){
-	cell tmp;
-	tmp.row = row;
-	tmp.col = col;
-	tmp.weight = weight;
-	return tmp;
-}
-
-void initAStar(){
-  for(int i = 0; i < numOfRows; i++){
-    for(int j = 0; j < numOfColumns; j++){
-      weight[i][j] = INFINITY;
-      explored[i][j] = 0;
-	  front[i][j] = 0;
-    }
-  }
-
-  float sumRow = 0;
-  for(int i = numOfRows - 1; i >= 0; i--){
-    float sumCol = 0;
-    for(int j = numOfColumns - 1; j >= 0; j--){
-        heuristic[i][j] = sqrt(sumRow * sumRow + sumCol * sumCol);
-        sumCol += width[j];
-    }
-    sumRow += height[i];
-  }
-
-  curRow = 0;
-  curCol = 0;
-  frontierCount = 0;
-
 }

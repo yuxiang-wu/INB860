@@ -21,11 +21,11 @@
 #define DETECT_COLUMNS 2
 #define STRAIGHT_FORWARD 3
 // Parameters for grid
-#define MAX_ROWS 5
-#define MAX_COLUMNS 5
+#define MAX_ROWS 10
+#define MAX_COLUMNS 10
 #define MAX_CELL 25
-#define FIRST_ROW_OFFSET 183
-#define FIRST_COL_OFFSET 183
+#define FIRST_ROW_OFFSET 130
+#define FIRST_COL_OFFSET 130
 // A* algorithm
 #define INFINITY 200000
 //used in navigating to a cell
@@ -45,48 +45,32 @@ short threshold;
 int numOfRows, numOfColumns;
 float height[MAX_ROWS];
 float width[MAX_COLUMNS];
-bool greyPatch[MAX_ROWS][MAX_COLUMNS];
-// A* algorithm
-float weight[MAX_ROWS][MAX_COLUMNS];
-float heuristic[MAX_ROWS][MAX_COLUMNS];
-int explored[MAX_ROWS][MAX_COLUMNS];
-int front[MAX_ROWS][MAX_COLUMNS];
-int curRow, curCol;
-cell frontier[MAX_CELL];
-int frontierCount;
-int succ[4][2] = {{0, -1}, {-1, 0}, {0, 1}, {1, 0}};
-//used in navigating to a cell
-int edgePos, dir; // edge position can be EAST, SOUTH, WEST, NORTH. direction can be TO_EAST, TO_SOUTH, TO_WEST, TO_NORTH
 
+int succ[4][2] = {{0, -1}, {-1, 0}, {0, 1}, {1, 0}};
 
 #include "D2.h"
-#include "priority_queue.h"
 
-void go2Cell(int row, int col){
-	
+void writeAdjMatFile(){
+    const string filename ="grid.txt";
+    TFileIOResult nIoResult;
+    TFileHandle filehandle;
+    Delete(filename, nIoResult);
+    int filesize = 1000;
+    OpenWrite(filehandle, nIoResult, filename, filesize);
+    string str;
+
+    for(int i = 0; i < numOfRows; i++){
+        StringFormat(str, "%f ", height[i]);
+        WriteString(filehandle, nIoResult, str);
+    }
+    WriteString(filehandle, nIoResult, "\n");
+    for(int i = 0; i < numOfColumns; i++){
+        StringFormat(str, "%f ", width[i]);
+        WriteString(filehandle, nIoResult, str);
+    }
+    Close(filehandle, nIoResult);
 }
 
-void AStar(){
-	updateFrontier(makeCell(0, 0, heuristic[0][0]));
-	while(frontierCount){
-		cell s = popLeastWeight();
-		if(s.row == numOfRows - 1 && s.col == numOfColumns - 1){
-		// return solution
-		}
-		else{
-			explored[s.row][s.col] = 1;
-			for(int i = 0; i < 4; i++){
-				int row = s.row + succ[i][0];
-				int col = s.col + succ[i][1];
-				if(explored[row][col])
-					continue;
-				else{
-					// explore the cell (row, col) and update the frontier with it
-				}
-			}
-		}
-	}
-}
 
 task main(){
   if(!readCalib()) return; //reads calibration informations, return if it fails.
@@ -117,9 +101,7 @@ task main(){
   PID(target, RIGHT_EDGE, STRAIGHT_FORWARD);
   turn(150);
 
-  // Start A* algorithm
-  initAStar();
-  AStar();
+  writeAdjMatFile();
 
   return;
 }
