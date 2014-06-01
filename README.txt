@@ -10,7 +10,59 @@ This README is for assignment of INB860 of QUT.
 * Last update: 1 Jun 2014
 
 ### Table of content ###
-
+.
+├── Calibration\ Programs
+│   ├── background.c
+│   └── compass.c
+├── README.txt
+├── Week06
+│   ├── A1\ faster\ version.c
+│   ├── A1.c
+│   ├── A2.c
+│   └── Matlab
+│       ├── TheseusCrawler.m
+│       ├── demo_graph.m
+│       ├── localBearings.m
+│       ├── myBehaviorA3.m
+│       ├── myBehaviorA4.m
+│       ├── myBehaviorA5.m
+│       ├── plot_graph.m
+│       ├── shortestPath.m
+│       ├── simGraphNavigation.m
+│       └── simGraphNavigation_modified.m
+├── Week07
+│   ├── A6.c
+│   ├── A7\ quick.c
+│   └── A7.c
+├── Week09
+│   ├── B1.c
+│   └── B2.c
+├── Week10
+│   ├── B3.c
+│   ├── B4.c
+│   └── B5.c
+├── Week12
+│   ├── Matlab
+│   │   ├── A_star.m
+│   │   ├── D2.mat
+│   │   ├── backtrack.m
+│   │   ├── demo.m
+│   │   ├── heuristic.m
+│   │   ├── plotGreyPatch.m
+│   │   └── plotGrid.m
+│   └── RobotC
+│       ├── D1.c
+│       ├── D2.c
+│       └── D2.h
+└── Week13
+    ├── Matlab
+        │   ├── E3.mat
+        │   ├── compute_edit_dist.m
+        │   ├── demo.m
+        │   └── plotPattern.m
+    └── RobotC
+        ├── E1.c
+        └── E2.c
 
 ### How do I get started with reading? ###
 Here are some guidelines:
