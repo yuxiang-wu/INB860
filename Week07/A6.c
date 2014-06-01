@@ -81,6 +81,7 @@ bool PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
         }
     }
     else{
+        // it timer times out, just return
       return true;
     }
   }
@@ -90,9 +91,11 @@ task main(){
   if(!readCalib()) return; //reads calibration informations, return if it fails.
   short target = threshold + targetCalib;
 
+  // move forward
   motor[Left] = 20;
   motor[Right] = 20;
 
+  // stop when dark line dectected
   while(SensorValue[Light] > target){}
   wait1Msec(400);
 
@@ -128,7 +131,7 @@ task main(){
   float cur_compass = compass();
   motor[Left] = -10;
   motor[Right] = 10;
-  while(compass() - cur_compass < 88){}
+  while(compass() - cur_compass < 88){} // turn 90 degrees
   motor[Left]=0;
   motor[Right]=0;
   wait1Msec(50);

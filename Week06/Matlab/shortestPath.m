@@ -1,4 +1,8 @@
 function [result, path] = shortestPath(M)
+%
+% result: shortest path from current position on M to the start
+% path: 
+%
 if(isempty(M.logbook))
     result = [];
     return

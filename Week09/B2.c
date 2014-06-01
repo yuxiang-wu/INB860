@@ -5,7 +5,6 @@
 float k; //expressed by r/d
 short threshold;
 
-
 #define timeout 550
 #define swipeAngle 350
 #define beepThreshold 12
@@ -58,6 +57,7 @@ bool readCalib(){
   return true;
 }
 
+// return current compass value
 float compass(){
   return (nMotorEncoder[Right] - nMotorEncoder[Left])*k;
 }
@@ -69,22 +69,24 @@ int getNumberOfBranches(){
   wait1Msec(100);
 
   motor[Left] = -rotateSpeed;
-  motor[Right ] = rotateSpeed;
+  motor[Right] = rotateSpeed;
 
   int count = 0;
   int cur_compass = compass();
 
+  // initialize wasDark, a flag that records whether a previous iteration was dark
   bool wasDark;
   if(SensorValue[Light] < threshold)
     wasDark = true;
   else
     wasDark = false;
 
+  // turn 360 degrees to find number of branches
   while(compass() - cur_compass < 360){
     if(SensorValue[Light] < threshold){
       if(!wasDark){
         wasDark = true;
-        count++;
+        count++; // count increment if there is a bright to dark transition
       }
     }
     else{
@@ -96,27 +98,29 @@ int getNumberOfBranches(){
 }
 
 int logbook[100][2];
-int size = 0;
-bool wasUTurn = false;
-bool finished = false;
+int size = 0; // the size of logbook
+bool wasUTurn = false; // true if there was a U turn in the path, which means the robot is backtracking on the tree
+bool finished = false; // true if all the nodes has been visited
 int nodeCounter = 1;  // the root node
 
+// given n branches, this function returns a branch choice
 int driver(int n){
   if(finished)
     return -1;
 
-  int c = 1 % n;
+  int c = 1 % n; // it always chooses the rightmost branch
 
+  // maintain the logbook
   if(wasUTurn){
-    if(c == 0)
+    if(c == 0) // at leaf
       wasUTurn = false;
     else{
       int tmp = (c + logbook[size - 1][0]) % n;
-      if(tmp != 0){
+      if(tmp != 0){ // update the branch at top of stack logbook
         logbook[size - 1][0] = tmp;
         wasUTurn = false;
       }
-      else{
+      else{ // pop the top element of logbook
         logbook[size - 1][0] = 0;
         logbook[size - 1][1] = 0;
         size--;
@@ -124,9 +128,9 @@ int driver(int n){
     }
   }
   else{
-    if(c == 0)
+    if(c == 0) // at leaf
       wasUTurn = true;
-    else{
+    else{ // push a new branch into the logbook
       logbook[size][0] = c;
       logbook[size][1] = n;
       size++;
@@ -134,19 +138,13 @@ int driver(int n){
     nodeCounter++;
   }
 
-  // eraseDisplay();
-  // for(int i = 0; i < size; i++){
-    // nxtDisplayTextLine(i + 2, "%d  %d", logbook[i][0], logbook[i][1]);
-    // wait1Msec(1000);
-  // }
-  // nxtDisplayTextLine(size + 3, "%d", size);
-
   if(size == 0)
     finished = true;
 
   return 1;
 }
 
+// this function rotate the robot until it gets to the chosen branch
 bool chooseBranch(int n){
   motor[Left] = 0;
   motor[Right] = 0;
@@ -155,10 +153,10 @@ bool chooseBranch(int n){
   int cur_compass = compass();
   int c = driver(n); // can be modified by driver
   if(c == -1)
-    return false;
+    return false; // return false if driver finds that traversal has finished
 
   motor[Left] = -rotateSpeed;
-  motor[Right ] = rotateSpeed;
+  motor[Right] = rotateSpeed;
 
   bool wasDark;
   if(SensorValue[Light] < threshold)
@@ -170,12 +168,14 @@ bool chooseBranch(int n){
     if(SensorValue[Light] < threshold){
       if(!wasDark){
         wasDark = true;
-        count++;
+        count++; // count incremented if there is a transition from bright to dark
       }
     }
     else{
       wasDark = false;
     }
+
+    // stop if arrive the chosen branch
     if(count == c){
       motor[Left] = 0;
       motor[Right] = 0;
@@ -183,9 +183,11 @@ bool chooseBranch(int n){
       break;
     }
   }
-  return true;
+
+  return true; // return true if it is successfully excuted
 }
 
+// PID controller
 void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
   float e, e_dot, old_e = threshold - SensorValue[Light], E = 0;
   short u;
@@ -212,9 +214,6 @@ void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
                 int numberOfBranches = getNumberOfBranches();
                 short tmp = compass();
                 while(compass() - tmp < 210){};
-                //motor[Left] = 0;
-                //motor[Right] = 0;
-                //wait1Msec(0);
                 if(!chooseBranch(numberOfBranches)) return;
                 time1[T1] = 0;
                 time1[T3] = 0;
@@ -229,14 +228,10 @@ void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
       int numberOfBranches = getNumberOfBranches();
       short tmp = compass();
       while(compass() - tmp < 240){};
-      //motor[Left] = 0;
-      //motor[Right] = 0;
-      //wait1Msec(100);
       if(!chooseBranch(numberOfBranches)) return;
       time1[T1] = 0;
       time1[T3] = 0; // Don's miss these two lines!!!
       time1[T2] = 0;
-      //break;
     }
 
   }

@@ -4,6 +4,7 @@
 
 float k; //expressed by r/d
 short threshold;
+
 #define timeout 550
 #define swipeAngle 350
 #define beepThreshold 10
@@ -56,72 +57,46 @@ bool readCalib(){
   return true;
 }
 
+// return current compass value
 float compass(){
   return (nMotorEncoder[Right] - nMotorEncoder[Left])*k;
 }
 
+// turn on the spot and the number of branches it finds
 void turnAndDisplay(){
   motor[Left] = 0;
   motor[Right] = 0;
   wait1Msec(100);
 
   motor[Left] = -rotateSpeed;
-  motor[Right ] = rotateSpeed;
+  motor[Right] = rotateSpeed;
 
   int count = 0;
   int cur_compass = compass();
 
+  // initialize wasDark, a flag that records whether a previous iteration was dark
   bool wasDark;
   if(SensorValue[Light] < threshold)
     wasDark = true;
   else
     wasDark = false;
 
+  // turn 360 degrees to find number of branches
   while(compass() - cur_compass < 360){
     if(SensorValue[Light] < threshold){
       if(!wasDark){
         wasDark = true;
-        count++;
+        count++; // count increment if there is a bright to dark transition
       }
     }
     else{
       wasDark = false;
     }
   }
+
   motor[Left] = 0;
   motor[Right] = 0;
   nxtDisplayTextLine(3, "#branches = %d", count);
-}
-
-
-
-/*turn on the spot if the timer expires, return false if it could not find another branch*/
-bool turnOnSpot(short target){
-  short wheelEncoderTurnDot = (short)(swipeAngle / k)/2;
-  nMotorEncoderTarget[Left] = nMotorEncoder[Left] - wheelEncoderTurnDot;
-  nMotorEncoderTarget[Right] = nMotorEncoder[Right] + wheelEncoderTurnDot;
-  float cur_compass = compass();
-
-  //start rotating
-  motor[Left] = 0;
-  motor[Right] = 0;
-  wait1Msec(15);
-  motor[Left] = -rotateSpeed;
-  motor[Right] = rotateSpeed;
-
-//  while(nMotorRunState[Right] != runStateIdle){
-  while(compass() - cur_compass < 360){
-    float diff = compass() - cur_compass;
-    if(SensorValue[Light] < target && (diff < 180 || diff > 250)){
-      time1[T1] = 0;
-      PlayTone(1175,20);
-      turnAndDisplay();
-      return true;
-    }
-  }
-  motor[Left]=0;
-  motor[Right]=0;
-  return false;
 }
 
 void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
@@ -131,6 +106,7 @@ void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
   time1[T1] = 0;
   time1[T2] = 0;
   float pre_compass = compass();
+
   while(true){
     if(time1[T1] < timeout){
         e = threshold - SensorValue[Light];
@@ -140,16 +116,17 @@ void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
         old_e = e;
         motor[Left]=cruise_speed - u;
         motor[Right]=cruise_speed + u;
+
         if(SensorValue[Light] < target){ //target can be make more conservative than threshold
           time1[T1] = 0;
         }
+
         if(time1[T2] > sampleFreq && SensorValue[Light] < target ){ //the light sensor should be on the tape when it beeps
             float cur_compass = compass();
             if(time1[T3] > beepInterval && ((cur_compass - pre_compass) > beepThreshold || (pre_compass - cur_compass) > beepThreshold)){
                 PlayTone(1175, 20);
                 turnAndDisplay();
                 break;
-                //time1[T3] = 0;
             }
 
             pre_compass = cur_compass;

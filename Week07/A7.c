@@ -80,11 +80,13 @@ bool PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
         }
     }
     else{
+        // it timer times out, just return
       return true;
     }
   }
 }
 
+// this helper function is used to control the motor speed and then wait for waittime miliseconds
 void control(short left, short right, int waittime = 0){
   motor[Left] = left;
   motor[Right] = right;
@@ -149,7 +151,7 @@ task main(){
   turnAndMove(target);
   turnAndMove(target);
 
-  //turn 45 degrees and move forward
+  //turn 45 degrees and move forward to the center
   float cur_compass = compass();
   control(10, -10, 0);
   while(cur_compass- compass() < 43){}

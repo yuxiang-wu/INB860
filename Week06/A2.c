@@ -64,8 +64,9 @@ float compass(){
   return (nMotorEncoder[Right] - nMotorEncoder[Left])*k;
 }
 
+// Convert any compass value to between -180 and 180
 float signedCompass(){
-  float comp = compass() + adjustAmount *adjustCount;
+  float comp = compass() + adjustAmount *adjustCount; // add some adjustment
   while(comp > 180.0){
     comp -= 360.0;
   }
@@ -87,7 +88,6 @@ bool turnOnSpot(short target){
   motor[Left] = -rotateSpeed;
   motor[Right] = rotateSpeed;
 
-//  while(nMotorRunState[Right] != runStateIdle){
   while(compass() - cur_compass < 390){
     float diff = compass() - cur_compass;
     if(SensorValue[Light] < target && (diff < 180 || diff > 250)){

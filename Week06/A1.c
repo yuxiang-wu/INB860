@@ -56,6 +56,7 @@ bool readCalib(){
   return true;
 }
 
+// return the current compass value
 float compass(){
   return (nMotorEncoder[Right] - nMotorEncoder[Left])*k;
 }
@@ -74,32 +75,37 @@ bool turnOnSpot(short target){
   motor[Left] = -rotateSpeed;
   motor[Right] = rotateSpeed;
 
-//  while(nMotorRunState[Right] != runStateIdle){
   while(compass() - cur_compass < 360){
     float diff = compass() - cur_compass;
-    if(SensorValue[Light] < target && (diff < 180 || diff > 250)){
+    if(SensorValue[Light] < target && (diff < 180 || diff > 250)){ // Ignore the origin dark line in range between 180 and 250.
       time1[T1] = 0;
-      PlayTone(1175,20);
+      PlayTone(1175,20); // beep when find another branch
       motor[Left]=0;
       motor[Right]=0;
       wait1Msec(50);
       return true;
     }
   }
+
   motor[Left]=0;
   motor[Right]=0;
   return false;
 }
 
+// Uses PID controller to follow the line
 void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
+  // initialize PID
   float e, e_dot, old_e = threshold - SensorValue[Light], E = 0;
   short u;
 
-  time1[T1] = 0;
-  time1[T2] = 0;
+  time1[T1] = 0; // If this timer times out, the robot is considered off the line
+  time1[T2] = 0; // To controll compass sampling
   float pre_compass = compass();
+
+  // PID starts
   while(true){
     if(time1[T1] < timeout){
+        // PID
         e = threshold - SensorValue[Light];
         e_dot = e - old_e;
         E += e;
@@ -107,12 +113,16 @@ void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
         old_e = e;
         motor[Left]=cruise_speed - u;
         motor[Right]=cruise_speed + u;
+
         if(SensorValue[Light] < target){ //target can be make more conservative than threshold
           time1[T1] = 0;
         }
+
         if(time1[T2] > sampleFreq && SensorValue[Light] < target ){ //the light sensor should be on the tape when it beeps
             float cur_compass = compass();
+            // beep if difference of compass value between two sampling exceeds beepThreshold
             if(time1[T3] > beepInterval && ((cur_compass - pre_compass) > beepThreshold || (pre_compass - cur_compass) > beepThreshold)){
+                // beepInterval is used to prevent two intermediate beeps
                 PlayTone(1175, 20);
                 time1[T3] = 0;
             }
