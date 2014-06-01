@@ -64,12 +64,14 @@ bool readCalib(){
   return true;
 }
 
+// append a float value into a text file
 void logCompass(float value){
   string str = "";
-  StringFormat(str, "%.2f  ", value);
+  StringFormat(str, "%.2f ", value);
   WriteString(logHandle, logResultIO, str);
 }
 
+// update motor speed and wait for duration
 void control(int left, int right, int duration = 0){
     motor[Left] = left;
     motor[Right] = right;
@@ -78,15 +80,17 @@ void control(int left, int right, int duration = 0){
 }
 
 void stop(){
-    control(0, 0, 50);
+    control(0, 0, 50); // stop the robot for 50 miliseconds
 }
 
+// get current compass value
 float compass(){
   return (nMotorEncoder[Right] - nMotorEncoder[Left])*k;
 }
 
+// get signed compass value with adjustment
 float signedCompass(){
-  float comp = compass() + adjustAmount *adjustCount;
+  float comp = compass() + adjustAmount * adjustCount;
   while(comp > 180.0){
     comp -= 360.0;
   }
@@ -107,21 +111,24 @@ bool turnOnSpot(short target, bool greyPatch){
 
   while(compass() - cur_compass < 390){
     float diff = compass() - cur_compass;
-    if(SensorValue[Light] < target && (diff < 180 || diff > 250)){
+    if(SensorValue[Light] < target && (diff < 180 || diff > 250)){ // ignore the original branch
       time1[T1] = 0;
       PlayTone(1175,20);
       stop();
       adjustCount++;
-      return true;
+      return true; // return true if it finds another branch
     }
-    //nxtDisplayStringAt(0,31,"%f", signedCompass());
   }
+
+  // on the endpoint
   stop();
-  if(!greyPatch){
+  
+  if(!greyPatch){ // if not yet detect a grey patch, turn back
       control(-rotateSpeed, rotateSpeed);
       while(SensorValue[Light] > target){}
       stop();
   }
+
   return false;
 }
 
@@ -143,6 +150,7 @@ void PIDDriver(short target){
         old_e = e;
         motor[Left] = cruise_speed - u;
         motor[Right] = cruise_speed + u;
+
         if(SensorValue[Light] < target){ //target can be make more conservative than threshold
           time1[T1] = 0;
         }
@@ -152,15 +160,19 @@ void PIDDriver(short target){
             if(time1[T4] > 300){
                 greyPatch = true;
                 stop();
+
+                // beep three times
                 PlayTone(1500, 40);
                 wait1Msec(800);
                 PlayTone(1500, 40);
                 wait1Msec(800);
                 PlayTone(1500, 40);
                 wait1Msec(800);
+
                 control(rotateSpeed, -rotateSpeed, 800); // 800 is for getting rid of the grey patch
                 while(SensorValue[Light] > threshold){}
                 stop();
+
                 time1[T1] = 0;
                 time1[T2] = 0;
                 time1[T3] = 0;
@@ -183,7 +195,8 @@ void PIDDriver(short target){
 
             pre_compass = cur_compass;
             time1[T2] = 0; // T2 for sampling frequency
-            if(greyPatch){
+
+            if(greyPatch){ // log the compass value from grey patch to the other endpoint
               float tmp = signedCompass();
               nxtDisplayStringAt(0,31,"%f", tmp);
               logCompass(tmp);
@@ -192,7 +205,7 @@ void PIDDriver(short target){
     }
     else{
         if(greyPatch){
-          if(!turnOnSpot(target, greyPatch)) return;
+          if(!turnOnSpot(target, greyPatch)) return; // reach the endpoint other than grey patch, return
         }
         else{
           turnOnSpot(target, greyPatch);
@@ -205,9 +218,9 @@ void PIDDriver(short target){
 void moveToPattern(){
   control(cruise_speed, cruise_speed);
   while(SensorValue[Light] > threshold){ }
-  wait1Msec(CALIB_CENTER);
+  wait1Msec(CALIB_CENTER); // move forward a little more so that the center of two wheel will be on the dark line
   stop();
-  control(rotateSpeed, -rotateSpeed);
+  control(rotateSpeed, -rotateSpeed); // rotate right
   while(SensorValue[Light] > threshold){ }
   stop();
 }

@@ -1,18 +1,19 @@
 function [result, path] = shortestPath(M)
 %
-% result: shortest path from current position on M to the start
-% path: 
+% result: shortest path from current position on M to the start, used in A4
+% path: shortest path from start to current position without deleting the zero at the beginning, used in A5
 %
-if(isempty(M.logbook))
+
+if(isempty(M.logbook)) % special case: empty logbook
     result = [];
     return
-elseif(size(M.logbook,1) <= 2)
+elseif(size(M.logbook,1) <= 2) % special case: small logbook
     tmp = M.logbook;
 else
     tmp = M.logbook(1:2,:);
-    for i=3:size(M.logbook,1)
+    for i= 3: size(M.logbook, 1)
         if(~isempty(tmp))
-            if(tmp(end,1)==0 && M.logbook(i,1)==0)
+            if(tmp(end,1) == 0 && M.logbook(i,1) == 0)
                 tmp(end,:)=[];
                 continue
             end

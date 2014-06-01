@@ -64,6 +64,7 @@ bool readCalib(){
   return true;
 }
 
+// return current compass value
 float compass(){
   return (nMotorEncoder[Right] - nMotorEncoder[Left])*k;
 }
@@ -75,22 +76,24 @@ int getNumberOfBranches(){
   wait1Msec(100);
 
   motor[Left] = -rotateSpeed;
-  motor[Right ] = rotateSpeed;
+  motor[Right] = rotateSpeed;
 
   int count = 0;
   int cur_compass = compass();
 
+  // initialize wasDark, a flag that records whether a previous iteration was dark
   bool wasDark;
   if(SensorValue[Light] < threshold)
     wasDark = true;
   else
     wasDark = false;
 
+  // turn 360 degrees to find number of branches
   while(compass() - cur_compass < 360){
     if(SensorValue[Light] < threshold){
       if(!wasDark){
         wasDark = true;
-        count++;
+        count++; // count increment if there is a bright to dark transition
       }
     }
     else{
@@ -102,9 +105,9 @@ int getNumberOfBranches(){
 }
 
 int logbook[100][2];
-int size = 0;
-bool wasUTurn = false;
-bool finished = false;
+int size = 0; // the size of logbook
+bool wasUTurn = false; // true if there was a U turn in the path, which means the robot is backtracking on the tree
+bool finished = false; // true if all the nodes has been visited
 int nodeCounter = 1;  // the root node
 
 int driver(int n){
@@ -158,6 +161,7 @@ int driver(int n){
   return result;
 }
 
+// this function rotate the robot until it gets to the chosen branch
 bool chooseBranch(int n){
   motor[Left] = 0;
   motor[Right] = 0;
@@ -166,10 +170,10 @@ bool chooseBranch(int n){
   int cur_compass = compass();
   int c = driver(n); // can be modified by driver
   if(c == -1)
-    return false;
+    return false; // return false if driver finds that traversal has finished
 
   motor[Left] = -rotateSpeed;
-  motor[Right ] = rotateSpeed;
+  motor[Right] = rotateSpeed;
 
   bool wasDark;
   if(SensorValue[Light] < threshold)
@@ -181,12 +185,14 @@ bool chooseBranch(int n){
     if(SensorValue[Light] < threshold){
       if(!wasDark){
         wasDark = true;
-        count++;
+        count++; // count incremented if there is a transition from bright to dark
       }
     }
     else{
       wasDark = false;
     }
+
+    // stop if arrive the chosen branch
     if(count == c){
       motor[Left] = 0;
       motor[Right] = 0;
@@ -194,9 +200,11 @@ bool chooseBranch(int n){
       break;
     }
   }
-  return true;
+
+  return true; // return true if it is successfully excuted
 }
 
+// PID controller
 void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
   float e, e_dot, old_e = threshold - SensorValue[Light], E = 0;
   short u;
@@ -255,7 +263,6 @@ void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
             if(time1[T3] > beepInterval && ((cur_compass - pre_compass) > beepThreshold || (pre_compass - cur_compass) > beepThreshold)){
             // T3 is for interval between the beeps so that it will not beep intermediately
                 PlayTone(1175, 50);
-                //control(cspeed, cspeed, 400);  //adjustment
                 int numberOfBranches = getNumberOfBranches();
                 short tmp = compass();
                 while(compass() - tmp < 210){};

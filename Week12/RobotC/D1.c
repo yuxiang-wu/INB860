@@ -16,6 +16,7 @@ short threshold;
 #define Kd 0.3
 #define Ki 0
 
+// update motor speed, then wait for a duration
 void control(int left, int right, int duration = 0){
     motor[Left] = left;
     motor[Right] = right;
@@ -63,21 +64,9 @@ bool readCalib(){
   return true;
 }
 
+// return current compass value
 float compass(){
   return (nMotorEncoder[Right] - nMotorEncoder[Left])*k;
-}
-
-void turn(int angle){
-  int startCompass = compass();
-  if(angle > 0){
-    control(-rotateSpeed, rotateSpeed);
-    while(compass() - startCompass < angle){}
-  }
-  else{
-    control(rotateSpeed, -rotateSpeed);
-    while(compass() - startCompass > angle){}
-  }
-  control(0, 0, 50);
 }
 
 void stop(){
@@ -87,18 +76,7 @@ void stop(){
 int cellCount = 0;
 int turnCount = 0;
 
-bool probe(){
-    int pre_compass = compass();
-    control(cspeed, cspeed / 3, 50);
-    while(SensorValue[Light] > threshold && pre_compass - compass() < 40){}
-    stop();
-    if(SensorValue[Light] < threshold){
-      cellCount++;
-      return false;
-    }
-    else return true;
-}
-
+// PID controller for line following
 void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
   float e, e_dot, old_e = threshold - SensorValue[Light], E = 0;
   short u;
@@ -106,6 +84,8 @@ void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
   time1[T1] = 0; // T1 is to determine whether the robot has go off the line
   time1[T2] = 0; // T2 is for compass sampling
   float pre_compass = compass();
+
+  // PID starts
   while(true){
     if(time1[T1] < timeout){
         e = threshold - SensorValue[Light];
@@ -115,6 +95,7 @@ void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
         old_e = e;
         motor[Left]=cruise_speed - u;
         motor[Right]=cruise_speed + u;
+
         if(SensorValue[Light] < target){ //target can be make more conservative than threshold
           time1[T1] = 0;
         }
@@ -135,13 +116,13 @@ void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
         }
     }
     else{
-      //PlayTone(1175, 50);
       turnCount++;
-      if(turnCount > 2){
-        control(cspeed / 2, cspeed * 2, 1300);
+      if(turnCount > 2){ // will arrive at goal after 2 turns
+        control(cspeed / 2, cspeed * 2, 1300); // move into the goal cell
         stop();
         return;
       }
+
       control(-cspeed, cspeed, 300);
       while(SensorValue[Light] > threshold){}
       stop();
@@ -167,7 +148,7 @@ task main(){
 
   // PID
   PIDDriver(cspeed, threshold + targetCalib, Kp, Kd, Ki);
-  nxtDisplayString(3, "#Cells = %d", cellCount - 2);
+  nxtDisplayString(3, "#Cells = %d", cellCount - 2); // in this situation, actual number of cells is 2 less than cellCount, hardcoded here
   nxtDisplayString(4, "#Turns = %d", turnCount);
   wait1Msec(10000);
   return;

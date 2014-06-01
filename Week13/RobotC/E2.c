@@ -64,12 +64,14 @@ bool readCalib(){
   return true;
 }
 
+// append a float value into a text file
 void logCompass(float value){
   string str = "";
   StringFormat(str, "%.2f ", value);
   WriteString(logHandle, logResultIO, str);
 }
 
+// update motor speed and wait for duration
 void control(int left, int right, int duration = 0){
     motor[Left] = left;
     motor[Right] = right;
@@ -78,15 +80,17 @@ void control(int left, int right, int duration = 0){
 }
 
 void stop(){
-    control(0, 0, 50);
+    control(0, 0, 50); // stop the robot for 50 miliseconds
 }
 
+// get current compass value
 float compass(){
   return (nMotorEncoder[Right] - nMotorEncoder[Left])*k;
 }
 
+// get signed compass value with adjustment
 float signedCompass(){
-  float comp = compass() + adjustAmount *adjustCount;
+  float comp = compass() + adjustAmount * adjustCount;
   while(comp > 180.0){
     comp -= 360.0;
   }
@@ -107,15 +111,16 @@ bool turnOnSpot(short target){
 
   while(compass() - cur_compass < 390){
     float diff = compass() - cur_compass;
-    if(SensorValue[Light] < target && (diff < 180 || diff > 250)){
+    if(SensorValue[Light] < target && (diff < 180 || diff > 250)){ // ignore the original branch
       time1[T1] = 0;
       PlayTone(1175,20);
       stop();
       adjustCount++;
-      return true;
+      return true; // return true if it finds another branch
     }
-    //nxtDisplayStringAt(0,31,"%f", signedCompass());
   }
+
+  // on the endpoint
   stop();
   return false;
 }

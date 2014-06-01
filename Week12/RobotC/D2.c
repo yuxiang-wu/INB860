@@ -26,17 +26,6 @@
 #define MAX_CELL 25
 #define FIRST_ROW_OFFSET 130
 #define FIRST_COL_OFFSET 130
-// A* algorithm
-#define INFINITY 200000
-//used in navigating to a cell
-#define EAST 1
-#define SOUTH 2
-#define WEST 3
-#define NORTH 4
-#define TO_EAST 5
-#define TO_SOUTH 6
-#define TO_WEST 7
-#define TO_NORTH 8
 
 // PID
 float k; //expressed by r/d
@@ -46,11 +35,10 @@ int numOfRows, numOfColumns;
 float height[MAX_ROWS];
 float width[MAX_COLUMNS];
 
-int succ[4][2] = {{0, -1}, {-1, 0}, {0, 1}, {1, 0}};
-
 #include "D2.h"
 
-void writeAdjMatFile(){
+// write the height of rows, width of columns into a text file
+void writeLogFile(){
     const string filename ="grid.txt";
     TFileIOResult nIoResult;
     TFileHandle filehandle;
@@ -64,6 +52,7 @@ void writeAdjMatFile(){
         WriteString(filehandle, nIoResult, str);
     }
     WriteString(filehandle, nIoResult, "\n");
+
     for(int i = 0; i < numOfColumns; i++){
         StringFormat(str, "%f ", width[i]);
         WriteString(filehandle, nIoResult, str);
@@ -85,23 +74,26 @@ task main(){
   stop();
 
   int target = threshold + targetCalib;
-  // Detect the columns and row of the grid
   PID(target, LEFT_EDGE, STRAIGHT_FORWARD);
   turn(150);
 
+  // Detect the rows of the grid
   PID(target, LEFT_EDGE, DETECT_ROWS);
   turn(-250);
 
+  // Return to start
   PID(target, LEFT_EDGE, STRAIGHT_FORWARD);
   turn(-150);
 
+  // Detect the columns of the grid
   PID(target, RIGHT_EDGE, DETECT_COLUMNS);
   turn(250);
 
+  // Return to start
   PID(target, RIGHT_EDGE, STRAIGHT_FORWARD);
   turn(150);
 
-  writeAdjMatFile();
+  writeLogFile();
 
   return;
 }

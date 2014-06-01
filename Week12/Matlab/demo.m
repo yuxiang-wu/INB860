@@ -1,11 +1,15 @@
 function demo(row, col, grey)
     clf;
-    hold on;
+    hold on; % for ploting
     
+    % reverse the row and col
     row = fliplr(row);
     col = fliplr(col);
+    
+    % plot the grid
     plotGrid(row, col);
     
+    % if grey not given, use a random one with probability 0.7
     if(nargin < 3)
         grey = rand(length(row), length(col)) > 0.7;
     end

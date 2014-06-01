@@ -8,6 +8,7 @@ function plotGreyPatch(rows, cols, grey)
     end
 end
 
+% plot at center of row r, column c
 function [x, y] = plotAtCenter(rows, cols, r, c)
     x = sum(cols(1:c)) - cols(c) / 2;
     y = sum(rows(end:-1:r)) - rows(r) / 2;

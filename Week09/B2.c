@@ -192,8 +192,8 @@ void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
   float e, e_dot, old_e = threshold - SensorValue[Light], E = 0;
   short u;
 
-  time1[T1] = 0;
-  time1[T2] = 0;
+  time1[T1] = 0; // T1 is to determine whether the robot has go off the line
+  time1[T2] = 0; // T2 is for compass sampling
   float pre_compass = compass();
   while(true){
     if(time1[T1] < timeout){
@@ -210,6 +210,7 @@ void PIDDriver(short cruise_speed, short target,  float KP, float KD, float KI){
         if(time1[T2] > sampleFreq && SensorValue[Light] < target ){ //the light sensor should be on the tape when it beeps
             float cur_compass = compass();
             if(time1[T3] > beepInterval && ((cur_compass - pre_compass) > beepThreshold || (pre_compass - cur_compass) > beepThreshold)){
+            // T3 is for interval between the beeps so that it will not beep intermediately
                 PlayTone(1175, 50);
                 int numberOfBranches = getNumberOfBranches();
                 short tmp = compass();

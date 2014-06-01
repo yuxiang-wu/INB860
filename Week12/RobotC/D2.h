@@ -38,10 +38,12 @@ bool readCalib(){
   return true;
 }
 
+// return current compass value
 float compass(){
   return (nMotorEncoder[Right] - nMotorEncoder[Left])*k;
 }
 
+// update motor speed and wait for a duration
 void control(int left, int right, int duration = 0){
     motor[Left] = left;
     motor[Right] = right;
@@ -56,15 +58,16 @@ void stop(){
 // Turn an certain angle until it finds a dark line
 void turn(int angle){
   int startCompass = compass();
+
   if(angle > 0){
-    control(-rotateSpeed, rotateSpeed);
+    control(-rotateSpeed, rotateSpeed); // turn left if angle > 0
     while(compass() - startCompass < angle && SensorValue[Light] > threshold){}
   }
   else{
-    control(rotateSpeed, -rotateSpeed, 100);
+    control(rotateSpeed, -rotateSpeed, 100); // turn right if angle < 0
     while(compass() - startCompass > angle && SensorValue[Light] > threshold){}
   }
-  //wait1Msec(100);
+
   stop();
 }
 
@@ -95,12 +98,14 @@ void PID(short target, bool isLeftEdgeFollower, int mode){
         old_e = e;
         motor[Left]=cspeed - u;
         motor[Right]=cspeed + u;
+
         if(SensorValue[Light] < target){ //target can be make more conservative than threshold
           time1[T1] = 0;
         }
 
         if(time1[T2] > sampleFreq && SensorValue[Light] < target ){ //the light sensor should be on the tape when it beeps
             float cur_compass = compass();
+
             if(time1[T3] > beepInterval && ((cur_compass - pre_compass) > beepThreshold || (pre_compass - cur_compass) > beepThreshold)){
             // T3 is for interval between the beeps so that it will not beep intermediately
                 PlayTone(1175, 50);
@@ -114,6 +119,7 @@ void PID(short target, bool isLeftEdgeFollower, int mode){
                     numOfRows++;
                     pre_encoder = nMotorEncoder[Left];
                 }
+
                 else if(mode == DETECT_COLUMNS){
                     if(numOfColumns == 0){
                         width[numOfColumns] = FIRST_COL_OFFSET + nMotorEncoder[Right] - pre_encoder;
@@ -135,7 +141,6 @@ void PID(short target, bool isLeftEdgeFollower, int mode){
         }
     }
     else{
-      //PlayTone(1175, 50);
       stop();
       return;
 
@@ -147,6 +152,7 @@ void PID(short target, bool isLeftEdgeFollower, int mode){
   }
 }
 
+// initialize the counter for rows and columns
 void init(){
   numOfColumns = 0;
   numOfRows = 0;
